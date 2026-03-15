@@ -12,6 +12,10 @@ This repository contains example minimal implementations of common agent workflo
   - Orchestrator-Subagents
   - Evaluator-Optimizer
 
+## Prompt templates
+
+- [QUAD CORE LAB — SCANDIDIM AI Lab Initialization](prompts/quad_core_lab_nodes.md)
+
 ## Getting Started
 See the Jupyter notebooks for detailed examples:
 
