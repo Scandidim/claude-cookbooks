@@ -1,0 +1,57 @@
+version: 1
+entity: TASK_QUEUE
+required_fields:
+  - task_id
+  - title
+  - owner
+  - deadline
+  - priority
+  - status
+  - definition_of_done
+  - artifact_link
+
+status_model:
+  primary_flow:
+    - BACKLOG
+    - TODO
+    - IN_PROGRESS
+    - REVIEW
+    - DONE
+  additional:
+    - BLOCKED
+    - ON_HOLD
+    - CANCELLED
+
+transition_rules:
+  require_transition_log: true
+  transition_log_fields:
+    - timestamp
+    - actor
+    - from_status
+    - to_status
+    - reason
+  blocked_requires:
+    - blocker_description
+    - unblock_owner
+    - target_unblock_time
+  done_requires:
+    - artifact_link
+    - acceptance_note
+
+sla:
+  status_update_after_change_minutes: 15
+  risk_update_mode: immediate
+  end_of_day_ssot_required: true
+
+ceo_escalation:
+  allowed_types:
+    - critical_blocker
+    - approval_required
+    - money_time_client_production_risk
+  required_payload:
+    - escalation_type
+    - issue_summary
+    - business_impact
+    - options
+    - owner_recommendation
+    - decision_deadline

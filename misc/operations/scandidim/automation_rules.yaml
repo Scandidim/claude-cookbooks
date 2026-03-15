@@ -1,0 +1,31 @@
+version: 1
+rules:
+  - id: ping_on_status_sla_violation
+    condition: "now - task.updated_at > 15m AND task.status in [IN_PROGRESS, REVIEW, BLOCKED]"
+    action:
+      - notify: task.owner
+      - notify: aiceo
+  - id: blocked_over_24h
+    condition: "task.status == BLOCKED AND blocked_age_hours > 24"
+    action:
+      - notify: task.team_lead
+      - notify: aiceo
+      - create: blocker_review_event
+  - id: done_without_artifact
+    condition: "task.status == DONE AND (task.artifact_link is null OR task.artifact_link == '')"
+    action:
+      - update_status: REVIEW
+      - notify: task.owner
+      - notify: task.team_lead
+  - id: escalation_payload_validation
+    condition: "new_escalation_to_ceo == true"
+    validate_required_fields:
+      - escalation_type
+      - issue_summary
+      - business_impact
+      - options
+      - owner_recommendation
+      - decision_deadline
+    on_fail:
+      - reject_escalation: true
+      - notify: aiceo
