@@ -1,0 +1,2 @@
+risk_id,created_at,owner,category,description,probability,impact,severity,mitigation_plan,trigger_signal,status,next_review_at
+RISK-0001,2026-03-15T09:00:00Z,owner_name,timeline,"Supplier delay",medium,high,high,"Activate backup supplier","Delivery ETA slipped >2 days",open,2026-03-18T09:00:00Z

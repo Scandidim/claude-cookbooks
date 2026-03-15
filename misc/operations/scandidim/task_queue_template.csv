@@ -1,0 +1,2 @@
+task_id,title,context,owner,team_lead,priority,status,deadline,definition_of_done,artifact_link,dependencies,risks,created_at,updated_at
+TASK-0001,Example task,"Why this matters",owner_name,lead_name,P1,TODO,2026-03-20,"Deliverable + acceptance",https://example.com/artifact,"DEP-1;DEP-2","timeline risk",2026-03-15T09:00:00Z,2026-03-15T09:00:00Z

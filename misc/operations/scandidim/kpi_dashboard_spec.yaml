@@ -1,0 +1,24 @@
+version: 1
+dashboard: scandidim_ops_discipline
+refresh: daily
+widgets:
+  - id: status_sla_compliance
+    title: Status SLA Compliance
+    formula: updated_within_15m / total_status_updates
+    target: ">=0.95"
+  - id: blocked_aging_24h
+    title: Blocked Tasks >24h
+    formula: count(tasks where status=BLOCKED and blocked_age_hours>24)
+    target: "<=5"
+  - id: tasks_without_dod
+    title: Tasks without Definition of Done
+    formula: count(tasks where definition_of_done is null or empty)
+    target: "<=0.05 * active_tasks"
+  - id: invalid_ceo_escalations
+    title: Invalid CEO Escalations
+    formula: count(escalations where template_valid=false)
+    target: "0"
+  - id: deadline_predictability_p0_p1
+    title: Deadline Predictability (P0/P1)
+    formula: on_time_completed_p0_p1 / total_completed_p0_p1
+    target: ">=0.90"
