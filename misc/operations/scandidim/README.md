@@ -14,6 +14,7 @@
 8. `ssot_data_dictionary.md` — визначення полів і правила якості даних SSOT.
 9. `kpi_dashboard_spec.yaml` — специфікація KPI дашборду дисципліни виконання.
 10. `automation_rules.yaml` — правила автоперевірок і нотифікацій.
+11. `event_log_production_canon_v1.md` — канонічне рішення запуску Event_Log у production.
 
 ## Як запускати
 
