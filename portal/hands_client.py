@@ -1,14 +1,11 @@
 """
-Browser Hands — Python Client v2
+Browser Hands — Python Client v3
 ──────────────────────────────────
-High-level async API wrapping hands_server primitives.
+Accessibility-first API. This client IS hands, eyes, and ears for people with disabilities.
 
-Fixes from audit v1:
-  - get_log() now works (calls server.get_log())
-  - smoke_login_form uses assert_() correctly
-  - pipeline() method for atomic multi-step execution
-  - All 18 actions have typed methods
-  - screenshot() returns dataUrl string
+  🤲 Motor  — click, drag, key combos, checkboxes, context menu
+  👁  Vision — page text, headings, links, images, forms, tables, ARIA
+  👂 Hearing — media control, caption extraction, volume
 
 Usage:
     import asyncio
@@ -17,10 +14,22 @@ Usage:
     async def main():
         c = HandsClient()
         await c.navigate("https://example.com")
+
+        # 👁 READ the page
+        page = await c.get_page_text()
+        headings = await c.get_headings()
+        forms = await c.get_forms()
+
+        # 🤲 INTERACT
         await c.type("testid=email", "user@example.com")
-        await c.click("text=Увійти")
-        title = await c.get_title()
-        print(title)
+        await c.key_combo("Tab")                    # navigate by keyboard
+        await c.check("name=terms")                 # tick checkbox
+        await c.key_combo("Enter")                  # submit
+
+        # 👂 HEAR the video
+        media = await c.get_media()
+        captions = await c.get_captions()
+        print(captions["transcript"])
 
     asyncio.run(main())
 """
@@ -133,6 +142,237 @@ class HandsClient:
         if contains is not None:
             cmd["contains"] = contains
         return await _srv.send_command(cmd, timeout=timeout)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 🤲 Motor (hands) — for people without hands
+    # ══════════════════════════════════════════════════════════════════════════
+
+    async def double_click(self, selector: str, timeout: float = 10.0) -> dict:
+        """Double-click an element (open files, select words, etc.)."""
+        return await _srv.send_command(
+            {"action": "double_click", "selector": selector}, timeout=timeout
+        )
+
+    async def right_click(self, selector: str, timeout: float = 10.0) -> dict:
+        """Right-click to open context menu."""
+        return await _srv.send_command(
+            {"action": "right_click", "selector": selector}, timeout=timeout
+        )
+
+    async def drag(
+        self,
+        from_selector: str | None = None,
+        to_selector: str | None = None,
+        from_x: int | None = None,
+        from_y: int | None = None,
+        to_x: int | None = None,
+        to_y: int | None = None,
+        timeout: float = 10.0,
+    ) -> dict:
+        """Drag from one element/coordinate to another."""
+        cmd: dict[str, Any] = {"action": "drag"}
+        if from_selector:
+            cmd["fromSelector"] = from_selector
+        if to_selector:
+            cmd["toSelector"] = to_selector
+        if from_x is not None:
+            cmd["fromX"] = from_x
+        if from_y is not None:
+            cmd["fromY"] = from_y
+        if to_x is not None:
+            cmd["toX"] = to_x
+        if to_y is not None:
+            cmd["toY"] = to_y
+        return await _srv.send_command(cmd, timeout=timeout)
+
+    async def key_combo(self, keys: str, selector: str | None = None, timeout: float = 5.0) -> dict:
+        """
+        Press a key combination: "Ctrl+C", "Alt+Tab", "Ctrl+Shift+T", "Shift+Enter".
+        Supported modifiers: Ctrl, Alt, Shift, Meta/Cmd.
+        """
+        cmd: dict[str, Any] = {"action": "key_combo", "keys": keys}
+        if selector:
+            cmd["selector"] = selector
+        return await _srv.send_command(cmd, timeout=timeout)
+
+    async def check(self, selector: str, timeout: float = 10.0) -> dict:
+        """Check a checkbox or radio button."""
+        return await _srv.send_command({"action": "check", "selector": selector}, timeout=timeout)
+
+    async def uncheck(self, selector: str, timeout: float = 10.0) -> dict:
+        """Uncheck a checkbox."""
+        return await _srv.send_command({"action": "uncheck", "selector": selector}, timeout=timeout)
+
+    async def back(self, timeout: float = 5.0) -> dict:
+        """Browser history back."""
+        return await _srv.send_command({"action": "back"}, timeout=timeout)
+
+    async def forward(self, timeout: float = 5.0) -> dict:
+        """Browser history forward."""
+        return await _srv.send_command({"action": "forward"}, timeout=timeout)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 👁  Vision (eyes) — for people without sight
+    # ══════════════════════════════════════════════════════════════════════════
+
+    async def get_page_text(self, timeout: float = 5.0) -> str:
+        """
+        Read entire page as plain text in reading order.
+        Headings, links, images (alt) included. Use as: 'read the screen'.
+        """
+        r = await _srv.send_command({"action": "get_page_text"}, timeout=timeout)
+        return r.get("result", {}).get("text", "")
+
+    async def get_headings(self, timeout: float = 5.0) -> list[dict]:
+        """
+        Page heading structure h1–h6.
+        Blind users navigate by headings — this is the table of contents.
+        """
+        r = await _srv.send_command({"action": "get_headings"}, timeout=timeout)
+        return r.get("result", {}).get("headings", [])
+
+    async def get_links(self, visible_only: bool = True, timeout: float = 5.0) -> list[dict]:
+        """All links with text + href. Returns [{text, href, title, target}]."""
+        r = await _srv.send_command(
+            {"action": "get_links", "visibleOnly": visible_only}, timeout=timeout
+        )
+        return r.get("result", {}).get("links", [])
+
+    async def get_images(self, visible_only: bool = True, timeout: float = 5.0) -> list[dict]:
+        """All images with alt text + src. Returns [{alt, src, title, hasAlt}]."""
+        r = await _srv.send_command(
+            {"action": "get_images", "visibleOnly": visible_only}, timeout=timeout
+        )
+        return r.get("result", {}).get("images", [])
+
+    async def get_forms(self, timeout: float = 5.0) -> list[dict]:
+        """
+        All form fields with labels, type, value, errors, required status.
+        Use to understand what a form is asking before filling it.
+        Returns [{label, type, name, value, required, invalid, error, options}].
+        """
+        r = await _srv.send_command({"action": "get_forms"}, timeout=timeout)
+        return r.get("result", {}).get("fields", [])
+
+    async def get_landmarks(self, timeout: float = 5.0) -> list[dict]:
+        """
+        ARIA landmark regions: main, nav, search, form, banner, footer…
+        Blind users jump between landmarks to navigate the page structure.
+        Returns [{role, label, tag, heading}].
+        """
+        r = await _srv.send_command({"action": "get_landmarks"}, timeout=timeout)
+        return r.get("result", {}).get("landmarks", [])
+
+    async def get_focused(self, timeout: float = 5.0) -> dict | None:
+        """
+        Currently focused element. Use to know 'where am I on the page?'
+        Returns {tag, type, id, name, text, value, ariaLabel, role} or None.
+        """
+        r = await _srv.send_command({"action": "get_focused"}, timeout=timeout)
+        return r.get("result", {}).get("focused")
+
+    async def find_all(self, selector: str, limit: int = 50, timeout: float = 5.0) -> list[dict]:
+        """
+        Find all elements matching selector. Returns [{tag, text, value, id, href}].
+        Use to list all menu items, buttons, or options on page.
+        """
+        r = await _srv.send_command(
+            {"action": "find_all", "selector": selector, "limit": limit}, timeout=timeout
+        )
+        return r.get("result", {}).get("items", [])
+
+    async def get_table(self, selector: str | None = None, timeout: float = 10.0) -> dict:
+        """
+        Parse a table into structured data: {headers, rows, rowCount, colCount}.
+        Blind users need row/column context — this provides it.
+        """
+        cmd: dict[str, Any] = {"action": "get_table"}
+        if selector:
+            cmd["selector"] = selector
+        r = await _srv.send_command(cmd, timeout=timeout)
+        return r.get("result", {})
+
+    async def get_aria_info(self, selector: str | None = None, timeout: float = 5.0) -> dict:
+        """
+        Full ARIA state of an element: role, name, description, expanded,
+        required, invalid, live region, valuenow/min/max, etc.
+        """
+        cmd: dict[str, Any] = {"action": "get_aria_info"}
+        if selector:
+            cmd["selector"] = selector
+        r = await _srv.send_command(cmd, timeout=timeout)
+        return r.get("result", {})
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 👂 Hearing (ears) — for people without hearing
+    # ══════════════════════════════════════════════════════════════════════════
+
+    async def get_media(self, timeout: float = 5.0) -> list[dict]:
+        """
+        Info about all audio/video on the page.
+        Returns [{tag, src, duration, paused, muted, volume, tracks, hasCaptions}].
+        """
+        r = await _srv.send_command({"action": "get_media"}, timeout=timeout)
+        return r.get("result", {}).get("media", [])
+
+    async def play_media(self, selector: str | None = None, timeout: float = 5.0) -> dict:
+        """Play a video/audio element (first found if no selector)."""
+        cmd: dict[str, Any] = {"action": "play_media"}
+        if selector:
+            cmd["selector"] = selector
+        return await _srv.send_command(cmd, timeout=timeout)
+
+    async def pause_media(self, selector: str | None = None, timeout: float = 5.0) -> dict:
+        """Pause a video/audio element."""
+        cmd: dict[str, Any] = {"action": "pause_media"}
+        if selector:
+            cmd["selector"] = selector
+        return await _srv.send_command(cmd, timeout=timeout)
+
+    async def set_volume(
+        self,
+        volume: float | None = None,
+        mute: bool | None = None,
+        selector: str | None = None,
+        timeout: float = 5.0,
+    ) -> dict:
+        """Set media volume (0.0–1.0) and/or mute state."""
+        cmd: dict[str, Any] = {"action": "set_volume"}
+        if selector is not None:
+            cmd["selector"] = selector
+        if volume is not None:
+            cmd["volume"] = volume
+        if mute is not None:
+            cmd["mute"] = mute
+        return await _srv.send_command(cmd, timeout=timeout)
+
+    async def get_captions(
+        self, selector: str | None = None, kind: str = "captions", timeout: float = 10.0
+    ) -> dict:
+        """
+        Extract caption/subtitle text from a video.
+        Returns {cues: [{start, end, text}], transcript: str, hasCaptions: bool}.
+        kind = "captions" | "subtitles" | "descriptions" | "any"
+        Use transcript to 'hear' what was said in the video.
+        """
+        cmd: dict[str, Any] = {"action": "get_captions", "kind": kind}
+        if selector:
+            cmd["selector"] = selector
+        r = await _srv.send_command(cmd, timeout=timeout)
+        return r.get("result", {})
+
+    async def enable_captions(
+        self, language: str = "uk", selector: str | None = None, timeout: float = 5.0
+    ) -> dict:
+        """
+        Turn on closed captions on a video.
+        Finds best track matching language, then any captions/subtitles.
+        """
+        cmd: dict[str, Any] = {"action": "enable_captions", "language": language}
+        if selector:
+            cmd["selector"] = selector
+        r = await _srv.send_command(cmd, timeout=timeout)
+        return r.get("result", {})
 
     # ── Utilities ───────────────────────────────────────────────────────────────
 

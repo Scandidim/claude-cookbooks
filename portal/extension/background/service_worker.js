@@ -206,7 +206,7 @@ async function ensureContentScript(tabId) {
   // Inject programmatically
   await chrome.scripting.executeScript({
     target: { tabId },
-    files: ["content/hands.js"],
+    files: ["content/RUKI.js"],
   });
   await sleep(100); // let it initialise
 }

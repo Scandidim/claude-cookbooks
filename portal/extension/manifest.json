@@ -23,7 +23,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content/hands.js"],
+      "js": ["content/RUKI.js"],
       "run_at": "document_idle",
       "all_frames": false
     }
@@ -47,7 +47,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["content/hands.js"],
+      "resources": ["content/RUKI.js"],
       "matches": ["<all_urls>"]
     }
   ]
