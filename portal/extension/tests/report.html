@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browser Hands v2 — Звіт</title>
+  <style>
+    :root {
+      --bg: #0c0c14;
+      --card: #12121e;
+      --border: #1e1e32;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #6b7280;
+      --font: 'Segoe UI', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    h2 { font-size: 14px; font-weight: 700; color: var(--accent2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .05em; }
+    .subtitle { color: var(--muted); margin-bottom: 28px; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .grid-wide { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* Stat cards */
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .stat-num { font-size: 40px; font-weight: 900; line-height: 1; }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .green { color: var(--green); }
+    .red   { color: var(--red); }
+    .yellow { color: var(--yellow); }
+    .accent { color: var(--accent); }
+
+    /* Progress bar */
+    .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .bar-label { width: 120px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+    .bar-track { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 4px; background: var(--accent); transition: width .5s ease; }
+    .bar-fill.green { background: var(--green); }
+    .bar-fill.yellow { background: var(--yellow); }
+    .bar-fill.red   { background: var(--red); }
+    .bar-val { width: 30px; text-align: right; font-size: 11px; color: var(--muted); }
+
+    /* Architecture flow */
+    .arch {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      flex-wrap: wrap;
+      padding: 8px 0;
+    }
+    .arch-box {
+      background: var(--border);
+      border: 1px solid #2e2e48;
+      border-radius: 7px;
+      padding: 10px 14px;
+      text-align: center;
+      min-width: 90px;
+    }
+    .arch-box .icon { font-size: 22px; display: block; margin-bottom: 3px; }
+    .arch-box .name { font-size: 10px; font-weight: 600; color: var(--accent2); }
+    .arch-box .sub  { font-size: 9px; color: var(--muted); margin-top: 1px; }
+    .arch-arrow { font-size: 18px; color: var(--muted); padding: 0 6px; }
+    .arch-arrow.ws { color: var(--green); }
+
+    /* File tree */
+    .tree { font-family: var(--mono); font-size: 11px; line-height: 1.8; }
+    .tree .dir  { color: var(--accent2); }
+    .tree .file { color: var(--text); }
+    .tree .new  { color: var(--green); }
+    .tree .mod  { color: var(--yellow); }
+    .tree .badge {
+      display: inline-block;
+      font-size: 8px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+      vertical-align: middle;
+      font-weight: 700;
+    }
+    .badge-new { background: #16361f; color: var(--green); }
+    .badge-mod { background: #3d2e07; color: var(--yellow); }
+
+    /* Test results */
+    .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .test-item { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 3px 0; }
+    .test-icon { flex-shrink: 0; font-size: 12px; }
+    .test-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Action list */
+    .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .action-tag {
+      background: var(--border);
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .action-tag.new { border-left: 2px solid var(--green); }
+    .action-tag.exists { border-left: 2px solid var(--accent); }
+
+    /* Fix list */
+    .fix-list { list-style: none; }
+    .fix-list li {
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .fix-list li:last-child { border-bottom: none; }
+    .fix-sev {
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 3px;
+      margin-top: 1px;
+    }
+    .sev-crit { background: #4b0e0e; color: var(--red); }
+    .sev-high { background: #3d2200; color: var(--yellow); }
+    .sev-med  { background: #0d2e3b; color: #38bdf8; }
+
+    /* Footer */
+    footer { margin-top: 24px; color: var(--muted); font-size: 10px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <h1>✋ Browser Hands v2</h1>
+  <p class="subtitle">Повний rewrite — звіт про зміни · 2026-03-19</p>
+
+  <!-- Stat row -->
+  <div class="grid3">
+    <div class="card stat">
+      <span class="stat-num red">39</span>
+      <span class="stat-label">Знайдено проблем</span>
+    </div>
+    <div class="card stat">
+      <span class="stat-num green">39</span>
+      <span class="stat-label">Виправлено</span>
+    </div>
+    <div class="card stat">
+      <span class="stat-num accent">34</span>
+      <span class="stat-label">Тестів пройдено</span>
+    </div>
+  </div>
+
+  <!-- Architecture -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Архітектура</div>
+    <div class="arch">
+      <div class="arch-box">
+        <span class="icon">🐍</span>
+        <span class="name">Python Script</span>
+        <span class="sub">HandsClient</span>
+      </div>
+      <span class="arch-arrow">──</span>
+      <div class="arch-box">
+        <span class="icon">🖥️</span>
+        <span class="name">hands_server.py</span>
+        <span class="sub">asyncio WS server</span>
+      </div>
+      <span class="arch-arrow ws">═══ WS ═══</span>
+      <div class="arch-box">
+        <span class="icon">⚙️</span>
+        <span class="name">service_worker.js</span>
+        <span class="sub">+ keepalive alarm</span>
+      </div>
+      <span class="arch-arrow">──</span>
+      <div class="arch-box">
+        <span class="icon">📄</span>
+        <span class="name">hands.js</span>
+        <span class="sub">content script</span>
+      </div>
+      <span class="arch-arrow">──</span>
+      <div class="arch-box">
+        <span class="icon">🌐</span>
+        <span class="name">DOM</span>
+        <span class="sub">7-level selector</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-wide">
+    <!-- File tree -->
+    <div class="card">
+      <div class="card-title">Змінені файли</div>
+      <div class="tree">
+        <span class="dir">portal/</span><br>
+        &nbsp;&nbsp;├── <span class="file mod">hands_server.py</span>
+        <span class="badge badge-mod">MOD</span><br>
+        &nbsp;&nbsp;├── <span class="file mod">hands_client.py</span>
+        <span class="badge badge-mod">MOD</span><br>
+        &nbsp;&nbsp;└── <span class="dir">extension/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">background/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file mod">service_worker.js</span>
+        <span class="badge badge-mod">MOD</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file mod">action_log.js</span>
+        <span class="badge badge-mod">MOD</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">content/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file mod">hands.js</span>
+        <span class="badge badge-mod">MOD</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="dir">popup/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file mod">popup.html</span>
+        <span class="badge badge-mod">MOD</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file mod">popup.css</span>
+        <span class="badge badge-mod">MOD</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file mod">popup.js</span>
+        <span class="badge badge-mod">MOD</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="dir">tests/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file new">selector.test.js</span>
+        <span class="badge badge-new">NEW</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="file new">integration.html</span>
+        <span class="badge badge-new">NEW</span>
+      </div>
+    </div>
+
+    <!-- Unit test results -->
+    <div class="card">
+      <div class="card-title">Unit тести (Node.js) — 34/34 ✓</div>
+      <div class="test-grid">
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">testid= знайти</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">testid= missing</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">testid= hidden</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">testid= спецсимволи</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">aria-label</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">aria-placeholder</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">name= input</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">name= select</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">placeholder=</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">text= точний</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">text= lowercase</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">text= whitespace</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">text= не partial</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">text= hidden</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">contains= partial</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">contains= case</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">visible=true</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">display:none</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">visibility:hidden</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">opacity:0</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">interactable ✓</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">disabled ✗</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">aria-disabled ✗</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">pointer-events ✗</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">hidden ✗</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">normalise spaces</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">normalise trim</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">normalise \t\n</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">normalise lower</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">null selector</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">empty selector</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">non-string</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">CSS fallback</span></div>
+        <div class="test-item"><span class="test-icon green">✓</span><span class="test-name">multiple elements</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Severity breakdown -->
+  <div class="grid" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Виправлені проблеми по серйозності</div>
+      <div class="bar-row">
+        <span class="bar-label">🔴 КРИТИЧНІ (6)</span>
+        <div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div>
+        <span class="bar-val">6/6</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">🟡 ВИСОКІ (7)</span>
+        <div class="bar-track"><div class="bar-fill yellow" style="width:100%"></div></div>
+        <span class="bar-val">7/7</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">🔵 СЕРЕДНІ (18)</span>
+        <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+        <span class="bar-val">18/18</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">⚪ НИЗЬКІ (8)</span>
+        <div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div>
+        <span class="bar-val">8/8</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Покриття дій (до / після)</div>
+      <div class="bar-row">
+        <span class="bar-label">content/hands.js</span>
+        <div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div>
+        <span class="bar-val">18 дій</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Було раніше</span>
+        <div class="bar-track"><div class="bar-fill red" style="width:38%"></div></div>
+        <span class="bar-val">7 дій</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Popup dropdown</span>
+        <div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div>
+        <span class="bar-val">18/18</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Python client</span>
+        <div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div>
+        <span class="bar-val">18/18</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- All 18 actions -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Всі 18 підтримуваних дій</div>
+    <div class="action-grid">
+      <div class="action-tag exists">🖱 click</div>
+      <div class="action-tag exists">⌨️ type</div>
+      <div class="action-tag new">📋 select <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag exists">🔗 navigate</div>
+      <div class="action-tag new">⏳ wait_for <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">🙈 wait_for_hidden <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag exists">✅ assert</div>
+      <div class="action-tag exists">📝 get_text</div>
+      <div class="action-tag new">🏷 get_attr <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">💬 get_value <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">🌐 get_url <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">📄 get_title <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">📜 scroll <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">🖱 hover <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">🎯 focus <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">🗑 clear <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">⌨️ key_press <span style="color:var(--green);font-size:9px">NEW</span></div>
+      <div class="action-tag new">📸 screenshot <span style="color:var(--green);font-size:9px">NEW</span></div>
+    </div>
+  </div>
+
+  <!-- Key fixes -->
+  <div class="card">
+    <div class="card-title">Ключові виправлення</div>
+    <ul class="fix-list">
+      <li><span class="fix-sev sev-crit">КРИТ</span>ActionLog race condition → write queue (серіалізація)</li>
+      <li><span class="fix-sev sev-crit">КРИТ</span>SW вмирав за 30с → keepalive alarm кожні 24с</li>
+      <li><span class="fix-sev sev-crit">КРИТ</span>Pending futures зависали → reject при WS-disconnect</li>
+      <li><span class="fix-sev sev-crit">КРИТ</span>get_attr/select/screenshot/wait_for_hidden — додані</li>
+      <li><span class="fix-sev sev-high">ВИСОК</span>Селектор text= не нормалізував пробіли → normalise()</li>
+      <li><span class="fix-sev sev-high">ВИСОК</span>type(): React/Vue-friendly — native setter + change event</li>
+      <li><span class="fix-sev sev-high">ВИСОК</span>select(): перевіряє опцію, видає список доступних</li>
+      <li><span class="fix-sev sev-high">ВИСОК</span>eval: Worker sandbox — без доступу до DOM/cookies</li>
+      <li><span class="fix-sev sev-med">МЕД</span>WS URL: configurable через chrome.storage (Config tab)</li>
+      <li><span class="fix-sev sev-med">МЕД</span>ensureContentScript: ping + авто-ін'єкція для старих вкладок</li>
+      <li><span class="fix-sev sev-med">МЕД</span>get_log() Python → реальний GET_LOG WS-протокол</li>
+      <li><span class="fix-sev sev-med">МЕД</span>scroll: instant замість smooth (без 500ms затримки)</li>
+    </ul>
+  </div>
+
+  <footer>Browser Hands v2 · 2026-03-19 · 10 файлів · 2062 рядки додано</footer>
+
+</body>
+</html>
