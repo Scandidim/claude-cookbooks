@@ -24,6 +24,7 @@ Available agent types:
 - crm_action   → create/update leads or contacts in a CRM
 - tilda_page   → create or update a Tilda website page
 - google_doc   → create or update a Google Docs / Sheets document
+- store_action → manage WooCommerce store: search/create/update products, list/create orders, update stock, track Nova Poshta parcels, sales reports
 - chitchat     → general conversation, questions, clarifications
 
 Respond ONLY with valid JSON in this exact format:

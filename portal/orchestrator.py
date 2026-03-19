@@ -21,7 +21,13 @@ from __future__ import annotations
 import json
 
 from portal import config  # noqa: F401 — ensures .env is loaded
-from portal.agents import CRMConnectorAgent, ExecutorAgent, MarketBotAgent, RegistrarAgent
+from portal.agents import (
+    CRMConnectorAgent,
+    ExecutorAgent,
+    MarketBotAgent,
+    RegistrarAgent,
+    StoreAgent,
+)
 from portal.storage import (
     create_task,
     get_artifacts,
@@ -63,6 +69,7 @@ class Orchestrator:
         self._executor = ExecutorAgent()
         self._market_bot = MarketBotAgent()
         self._crm = CRMConnectorAgent()
+        self._store = StoreAgent()
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
@@ -125,6 +132,9 @@ class Orchestrator:
 
         elif agent_name == "crm_action":
             return self._crm.run(task_id, intent, text, extracted)
+
+        elif agent_name == "store_action":
+            return self._store.run(task_id, intent, text, extracted)
 
         elif agent_name == "google_doc":
             result = self._executor.run(task_id, intent, text, extracted)

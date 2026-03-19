@@ -12,6 +12,7 @@ Multi-agent portal that routes user requests to specialist AI agents.
 | Executor | claude-sonnet-4-6 | Produces documents, reports, ad copy, code |
 | Market Bot | claude-haiku-4-5 + Gemini | Market analysis, ad copy, competitor research |
 | CRM Connector | claude-haiku-4-5 | KOMMO CRM: create/update leads and contacts |
+| Store Agent | claude-haiku-4-5 | WooCommerce: products, orders, stock, Nova Poshta tracking |
 
 ## Data Flow
 ```
@@ -33,6 +34,8 @@ User (Telegram / API)
 - KOMMO CRM: REST API wrapper ready
 - Google Workspace: service account auth, Docs + Sheets + Drive
 - Tilda: read/publish API; full page creation requires Zero Block API
+- WooCommerce: REST API v3 (products, orders, customers, reports)
+- Nova Poshta: tracking, cities/warehouses lookup, waybill creation
 
 ## Environment Variables
 See `.env.example` in this directory.

@@ -51,6 +51,17 @@ KOMMO_ACCESS_TOKEN: str = _optional("KOMMO_ACCESS_TOKEN")
 TILDA_PUBLIC_KEY: str = _optional("TILDA_PUBLIC_KEY")
 TILDA_SECRET_KEY: str = _optional("TILDA_SECRET_KEY")
 
+# ── WooCommerce Store ──────────────────────────────────────────────────────────
+WOOCOMMERCE_URL: str = _optional("WOOCOMMERCE_URL")
+WOOCOMMERCE_CONSUMER_KEY: str = _optional("WOOCOMMERCE_CONSUMER_KEY")
+WOOCOMMERCE_CONSUMER_SECRET: str = _optional("WOOCOMMERCE_CONSUMER_SECRET")
+
+# ── Nova Poshta ────────────────────────────────────────────────────────────────
+NOVA_POSHTA_API_KEY: str = _optional("NOVA_POSHTA_API_KEY")
+
+# Claude model alias for store agent
+MODEL_STORE_AGENT = "claude-haiku-4-5"  # fast responses for store queries
+
 # ── Portal settings ────────────────────────────────────────────────────────────
 PORTAL_NAME: str = _optional("PORTAL_NAME", "AI Portal")
 MAX_TASK_HISTORY: int = int(_optional("MAX_TASK_HISTORY", "20"))
