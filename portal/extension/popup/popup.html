@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browser Hands</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <div class="logo">✋ Browser Hands</div>
+    <div class="ws-badge" id="ws-badge">⚪ offline</div>
+  </header>
+
+  <section class="card" id="cmd-panel">
+    <h2>Ручна команда</h2>
+    <div class="row">
+      <select id="action-select">
+        <option value="click">click</option>
+        <option value="type">type</option>
+        <option value="navigate">navigate</option>
+        <option value="assert">assert</option>
+        <option value="wait_for">wait_for</option>
+        <option value="get_text">get_text</option>
+        <option value="scroll">scroll</option>
+        <option value="eval">eval</option>
+      </select>
+    </div>
+    <div class="row" id="selector-row">
+      <input id="selector-input" type="text" placeholder="selector (css / testid=foo / aria=label / text=Click)" />
+    </div>
+    <div class="row" id="value-row" style="display:none">
+      <input id="value-input" type="text" placeholder="text / url / code" />
+    </div>
+    <div class="row">
+      <button id="run-btn">▶ Виконати</button>
+      <button id="ws-btn">⚡ Підключити портал</button>
+    </div>
+    <div id="result-box" class="result-box"></div>
+  </section>
+
+  <section class="card">
+    <div class="log-header">
+      <h2>Action Log</h2>
+      <button id="clear-log-btn" class="small-btn">очистити</button>
+    </div>
+    <div id="log-box" class="log-box"></div>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>
