@@ -62,6 +62,11 @@ NOVA_POSHTA_API_KEY: str = _optional("NOVA_POSHTA_API_KEY")
 # Claude model alias for store agent
 MODEL_STORE_AGENT = "claude-haiku-4-5"  # fast responses for store queries
 
+# ── S-VAULT Phantom (Firebase / Firestore) ─────────────────────────────────────
+FIREBASE_SERVICE_ACCOUNT_FILE: str = _optional("FIREBASE_SERVICE_ACCOUNT_FILE")
+SVAULT_APP_ID: str = _optional("SVAULT_APP_ID", "phantom-final-v1")
+SVAULT_USER_ID: str = _optional("SVAULT_USER_ID")
+
 # ── Portal settings ────────────────────────────────────────────────────────────
 PORTAL_NAME: str = _optional("PORTAL_NAME", "AI Portal")
 MAX_TASK_HISTORY: int = int(_optional("MAX_TASK_HISTORY", "20"))

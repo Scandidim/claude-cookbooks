@@ -2,6 +2,11 @@
 portal/storage/portal.db
 portal/.env
 
+# Firebase / S-VAULT — never commit private keys
+serviceAccountKey.json
+*serviceAccountKey*.json
+firebase-adminsdk-*.json
+
 # Byte-compiled / optimized / DLL files
 tmp/
 __pycache__/
