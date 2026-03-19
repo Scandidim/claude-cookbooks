@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="uk">
+<!--
+  Browser Hands — Integration Test Runner
+  ─────────────────────────────────────────
+  Load this page in Chrome (with extension installed) and open DevTools console.
+  The test page sends commands to itself via the extension and verifies results.
+
+  URL: file:///path/to/portal/extension/tests/integration.html
+  OR serve locally: python3 -m http.server 9999 (then http://localhost:9999/...)
+-->
+<head>
+  <meta charset="UTF-8" />
+  <title>Browser Hands — Integration Tests</title>
+  <style>
+    :root { --bg:#0f0f13; --surface:#1a1a24; --border:#2a2a3a;
+            --green:#22c55e; --red:#ef4444; --text:#e2e8f0; --muted:#64748b;
+            --accent:#6366f1; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:monospace; font-size:13px; padding:20px; }
+    h1 { font-size:18px; margin-bottom:16px; color:var(--accent); }
+    #run-btn { background:var(--accent); color:#fff; border:none; border-radius:6px;
+               padding:8px 20px; cursor:pointer; font-size:13px; margin-bottom:16px; }
+    #run-btn:hover { opacity:.85; }
+    #results { max-height:400px; overflow-y:auto; border:1px solid var(--border);
+               border-radius:6px; padding:10px; background:var(--surface); }
+    .entry { padding:3px 0; border-bottom:1px solid var(--border); display:flex; gap:8px; }
+    .entry:last-child { border-bottom:none; }
+    .ok  { color:var(--green); }
+    .err { color:var(--red); }
+    .name { flex:1; }
+    .dur { color:var(--muted); font-size:11px; min-width:50px; text-align:right; }
+    #summary { margin-top:12px; font-size:14px; }
+
+    /* Test fixtures — elements the tests interact with */
+    #fixtures { margin-top:24px; border:1px solid var(--border); border-radius:8px; padding:16px; }
+    #fixtures h2 { font-size:13px; color:var(--muted); margin-bottom:12px; }
+    .form-row { display:flex; gap:8px; margin-bottom:8px; }
+    input, select, textarea {
+      background:var(--bg); border:1px solid var(--border); border-radius:4px;
+      padding:5px 8px; color:var(--text); font-size:12px; }
+    button.fixture-btn { background:var(--accent); color:#fff; border:none;
+      border-radius:4px; padding:5px 10px; cursor:pointer; font-size:12px; }
+  </style>
+</head>
+<body>
+  <h1>✋ Browser Hands — Integration Tests</h1>
+  <button id="run-btn">▶ Запустити всі тести</button>
+  <div id="results"><span style="color:var(--muted)">Натисни Run щоб почати...</span></div>
+  <div id="summary"></div>
+
+  <!-- ── Test fixtures ─────────────────────────────────────────────────────── -->
+  <div id="fixtures">
+    <h2>Test Fixtures (не чіпати руками)</h2>
+
+    <div class="form-row">
+      <input data-testid="email-input" type="email" placeholder="Email address" name="email" />
+      <input data-testid="password-input" type="password" placeholder="Password" name="password" />
+    </div>
+    <div class="form-row">
+      <input data-testid="search-box" type="text" placeholder="Search..." aria-label="Search" />
+    </div>
+    <div class="form-row">
+      <select data-testid="country-select" name="country">
+        <option value="">-- вибери --</option>
+        <option value="ua">Україна</option>
+        <option value="pl">Польща</option>
+        <option value="de">Германія</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <button data-testid="submit-btn" class="fixture-btn">Увійти</button>
+      <button data-testid="cancel-btn" class="fixture-btn" style="background:#374151">Скасувати</button>
+      <button id="invisible-btn" class="fixture-btn" style="display:none">Невидима</button>
+    </div>
+    <div class="form-row">
+      <span data-testid="status-label" id="status-label">Очікуємо...</span>
+    </div>
+  </div>
+
+  <script>
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    function send(msg) {
+      return new Promise((resolve, reject) => {
+        if (!window.chrome?.runtime?.sendMessage) {
+          return reject(new Error("Extension not installed or not in extension context"));
+        }
+        chrome.runtime.sendMessage(msg, resp => {
+          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+          else resolve(resp);
+        });
+      });
+    }
+
+    async function cmd(command) {
+      return send({ type: "HANDS_CMD", command });
+    }
+
+    function assert(condition, msg) {
+      if (!condition) throw new Error(msg || "assertion failed");
+    }
+    function assertEqual(a, b, msg) {
+      if (a !== b) throw new Error(msg || `expected "${b}", got "${a}"`);
+    }
+
+    // ── Test runner ────────────────────────────────────────────────────────────
+
+    const resultsEl = document.getElementById("results");
+    const summaryEl = document.getElementById("summary");
+
+    async function runTest(name, fn) {
+      const t0 = Date.now();
+      try {
+        await fn();
+        const ms = Date.now() - t0;
+        append("ok", name, ms);
+        return true;
+      } catch (e) {
+        const ms = Date.now() - t0;
+        append("err", `${name}: ${e.message}`, ms);
+        return false;
+      }
+    }
+
+    function append(kind, name, ms) {
+      const row = document.createElement("div");
+      row.className = "entry";
+      row.innerHTML = `<span class="${kind}">${kind === "ok" ? "✓" : "✗"}</span>
+        <span class="name">${escHtml(name)}</span>
+        <span class="dur">${ms}ms</span>`;
+      resultsEl.appendChild(row);
+      resultsEl.scrollTop = resultsEl.scrollHeight;
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    // Reset all fixture inputs between tests
+    function resetFixtures() {
+      document.querySelector('[data-testid="email-input"]').value = "";
+      document.querySelector('[data-testid="password-input"]').value = "";
+      document.querySelector('[data-testid="search-box"]').value = "";
+      document.querySelector('[data-testid="country-select"]').value = "";
+      document.getElementById("status-label").textContent = "Очікуємо...";
+    }
+
+    // ── Tests ──────────────────────────────────────────────────────────────────
+
+    const TESTS = [
+
+      ["get_url returns current URL", async () => {
+        const r = await cmd({ action: "get_url" });
+        assert(r.ok, r.error);
+        assert(r.result.url.includes("integration.html"), "URL should contain integration.html");
+      }],
+
+      ["get_title returns page title", async () => {
+        const r = await cmd({ action: "get_title" });
+        assert(r.ok, r.error);
+        assert(r.result.title.includes("Browser Hands"), `Got: ${r.result.title}`);
+      }],
+
+      ["wait_for finds visible element", async () => {
+        const r = await cmd({ action: "wait_for", selector: "testid=submit-btn" });
+        assert(r.ok, r.error);
+        assertEqual(r.result.tag, "button");
+      }],
+
+      ["wait_for_hidden: invisible button is hidden", async () => {
+        const r = await cmd({ action: "wait_for_hidden", selector: "#invisible-btn" });
+        assert(r.ok, r.error);
+        assert(r.result.hidden);
+      }],
+
+      ["type into email input", async () => {
+        resetFixtures();
+        const r = await cmd({ action: "type", selector: "testid=email-input", text: "user@example.com" });
+        assert(r.ok, r.error);
+        const el = document.querySelector('[data-testid="email-input"]');
+        assertEqual(el.value, "user@example.com");
+      }],
+
+      ["type clears previous value", async () => {
+        const el = document.querySelector('[data-testid="email-input"]');
+        el.value = "old@value.com";
+        const r = await cmd({ action: "type", selector: "testid=email-input", text: "new@value.com", clear: true });
+        assert(r.ok, r.error);
+        assertEqual(el.value, "new@value.com");
+      }],
+
+      ["type by placeholder selector", async () => {
+        resetFixtures();
+        const r = await cmd({ action: "type", selector: "placeholder=Search...", text: "laptop" });
+        assert(r.ok, r.error);
+        const el = document.querySelector('[data-testid="search-box"]');
+        assertEqual(el.value, "laptop");
+      }],
+
+      ["type by aria-label selector", async () => {
+        resetFixtures();
+        const r = await cmd({ action: "type", selector: "aria=Search", text: "kyiv" });
+        assert(r.ok, r.error);
+        const el = document.querySelector('[data-testid="search-box"]');
+        assertEqual(el.value, "kyiv");
+      }],
+
+      ["type by name= selector", async () => {
+        resetFixtures();
+        const r = await cmd({ action: "type", selector: "name=password", text: "secret123" });
+        assert(r.ok, r.error);
+        const el = document.querySelector('[data-testid="password-input"]');
+        assertEqual(el.value, "secret123");
+      }],
+
+      ["select by testid", async () => {
+        resetFixtures();
+        const r = await cmd({ action: "select", selector: "testid=country-select", value: "ua" });
+        assert(r.ok, r.error);
+        const el = document.querySelector('[data-testid="country-select"]');
+        assertEqual(el.value, "ua");
+      }],
+
+      ["select invalid option throws error", async () => {
+        const r = await cmd({ action: "select", selector: "testid=country-select", value: "xx" });
+        assert(!r.ok, "should fail for invalid option");
+        assert(r.error.includes("not found"), `Error: ${r.error}`);
+      }],
+
+      ["clear action empties input", async () => {
+        const el = document.querySelector('[data-testid="search-box"]');
+        el.value = "something";
+        const r = await cmd({ action: "clear", selector: "testid=search-box" });
+        assert(r.ok, r.error);
+        assertEqual(el.value, "");
+      }],
+
+      ["get_text from status label", async () => {
+        document.getElementById("status-label").textContent = "Ready!";
+        const r = await cmd({ action: "get_text", selector: "testid=status-label" });
+        assert(r.ok, r.error);
+        assertEqual(r.result.text, "Ready!");
+      }],
+
+      ["get_attr reads data attribute", async () => {
+        const r = await cmd({ action: "get_attr", selector: "testid=submit-btn", attr: "data-testid" });
+        assert(r.ok, r.error);
+        assertEqual(r.result.value, "submit-btn");
+      }],
+
+      ["get_value from input", async () => {
+        const el = document.querySelector('[data-testid="email-input"]');
+        el.value = "test@test.com";
+        const r = await cmd({ action: "get_value", selector: "testid=email-input" });
+        assert(r.ok, r.error);
+        assertEqual(r.result.value, "test@test.com");
+      }],
+
+      ["assert element exists", async () => {
+        const r = await cmd({ action: "assert", selector: "testid=cancel-btn", exists: true });
+        assert(r.ok, r.error);
+      }],
+
+      ["assert element does not exist (hidden)", async () => {
+        const r = await cmd({ action: "assert", selector: "#invisible-btn", exists: false });
+        assert(r.ok, r.error);
+      }],
+
+      ["assert contains text", async () => {
+        document.getElementById("status-label").textContent = "Operation completed successfully";
+        const r = await cmd({ action: "assert", selector: "testid=status-label", contains: "completed" });
+        assert(r.ok, r.error);
+      }],
+
+      ["assert wrong text fails", async () => {
+        document.getElementById("status-label").textContent = "Ready";
+        const r = await cmd({ action: "assert", selector: "testid=status-label", contains: "error" });
+        assert(!r.ok, "should fail when text not found");
+      }],
+
+      ["click button by testid", async () => {
+        let clicked = false;
+        document.querySelector('[data-testid="cancel-btn"]').addEventListener("click", () => { clicked = true; }, { once: true });
+        const r = await cmd({ action: "click", selector: "testid=cancel-btn" });
+        assert(r.ok, r.error);
+        assert(clicked, "button should have been clicked");
+      }],
+
+      ["click button by text=", async () => {
+        let clicked = false;
+        document.querySelector('[data-testid="submit-btn"]').addEventListener("click", () => { clicked = true; }, { once: true });
+        const r = await cmd({ action: "click", selector: "text=Увійти" });
+        assert(r.ok, r.error);
+        assert(clicked, "button with text 'Увійти' should have been clicked");
+      }],
+
+      ["hover fires mouseover event", async () => {
+        let hovered = false;
+        document.querySelector('[data-testid="submit-btn"]').addEventListener("mouseover", () => { hovered = true; }, { once: true });
+        const r = await cmd({ action: "hover", selector: "testid=submit-btn" });
+        assert(r.ok, r.error);
+        assert(hovered, "mouseover should have fired");
+      }],
+
+      ["key_press Enter on input", async () => {
+        let pressed = false;
+        document.querySelector('[data-testid="search-box"]').addEventListener("keydown", e => {
+          if (e.key === "Enter") pressed = true;
+        }, { once: true });
+        const r = await cmd({ action: "key_press", selector: "testid=search-box", key: "Enter" });
+        assert(r.ok, r.error);
+        assert(pressed, "Enter keydown should have fired");
+      }],
+
+      ["scroll action succeeds", async () => {
+        const r = await cmd({ action: "scroll", y: 100 });
+        assert(r.ok, r.error);
+        assert(r.result.scrolled, "should return scroll result");
+      }],
+
+      ["unknown action returns error", async () => {
+        const r = await cmd({ action: "fly_to_moon" });
+        assert(!r.ok, "should fail");
+        assert(r.error.includes("Unknown action"), `Error: ${r.error}`);
+      }],
+
+      ["missing selector returns error", async () => {
+        const r = await cmd({ action: "click", selector: "testid=NONEXISTENT_ELEMENT_XYZ" });
+        assert(!r.ok, "should fail for nonexistent element");
+        assert(r.error.includes("not found"), `Error: ${r.error}`);
+      }],
+
+      ["missing action field returns error", async () => {
+        const r = await cmd({});
+        assert(!r.ok, "should fail with no action");
+        assert(r.error.includes("Missing"), `Error: ${r.error}`);
+      }],
+
+      ["get_attr requires attr param", async () => {
+        const r = await cmd({ action: "get_attr", selector: "testid=submit-btn" });
+        assert(!r.ok, "should fail without attr param");
+      }],
+
+    ];
+
+    // ── Main ──────────────────────────────────────────────────────────────────
+
+    document.getElementById("run-btn").addEventListener("click", async () => {
+      resultsEl.innerHTML = "";
+      summaryEl.textContent = "";
+      const btn = document.getElementById("run-btn");
+      btn.disabled = true;
+      btn.textContent = "⏳ Виконую…";
+
+      let pass = 0, fail = 0;
+      for (const [name, fn] of TESTS) {
+        const ok = await runTest(name, fn);
+        if (ok) pass++; else fail++;
+        resetFixtures();
+        await new Promise(r => setTimeout(r, 50)); // small gap between tests
+      }
+
+      btn.disabled = false;
+      btn.textContent = "▶ Запустити всі тести";
+
+      const color = fail === 0 ? "var(--green)" : "var(--red)";
+      summaryEl.innerHTML = `<span style="color:${color}">
+        ${fail === 0 ? "✓" : "✗"} ${pass} passed, ${fail} failed / ${TESTS.length} total
+      </span>`;
+    });
+  </script>
+</body>
+</html>

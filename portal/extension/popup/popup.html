@@ -8,43 +8,97 @@
 </head>
 <body>
   <header>
-    <div class="logo">✋ Browser Hands</div>
+    <div class="logo">✋ Browser Hands <span class="version">v2</span></div>
     <div class="ws-badge" id="ws-badge">⚪ offline</div>
   </header>
 
-  <section class="card" id="cmd-panel">
-    <h2>Ручна команда</h2>
+  <!-- Tab bar -->
+  <div class="tabs">
+    <button class="tab active" data-tab="cmd">Команда</button>
+    <button class="tab" data-tab="log">Лог</button>
+    <button class="tab" data-tab="cfg">Налаштування</button>
+  </div>
+
+  <!-- ── Command panel ── -->
+  <section class="panel active" id="tab-cmd">
     <div class="row">
       <select id="action-select">
-        <option value="click">click</option>
-        <option value="type">type</option>
-        <option value="navigate">navigate</option>
-        <option value="assert">assert</option>
-        <option value="wait_for">wait_for</option>
-        <option value="get_text">get_text</option>
-        <option value="scroll">scroll</option>
-        <option value="eval">eval</option>
+        <optgroup label="Навігація">
+          <option value="navigate">navigate</option>
+          <option value="get_url">get_url</option>
+          <option value="get_title">get_title</option>
+        </optgroup>
+        <optgroup label="Взаємодія">
+          <option value="click">click</option>
+          <option value="type">type</option>
+          <option value="select">select</option>
+          <option value="clear">clear</option>
+          <option value="hover">hover</option>
+          <option value="focus">focus</option>
+          <option value="key_press">key_press</option>
+          <option value="scroll">scroll</option>
+        </optgroup>
+        <optgroup label="Читання">
+          <option value="get_text">get_text</option>
+          <option value="get_attr">get_attr</option>
+          <option value="get_value">get_value</option>
+        </optgroup>
+        <optgroup label="Перевірки">
+          <option value="assert">assert</option>
+          <option value="wait_for">wait_for</option>
+          <option value="wait_for_hidden">wait_for_hidden</option>
+        </optgroup>
+        <optgroup label="Утиліти">
+          <option value="screenshot">screenshot</option>
+          <option value="eval">eval</option>
+        </optgroup>
       </select>
     </div>
-    <div class="row" id="selector-row">
-      <input id="selector-input" type="text" placeholder="selector (css / testid=foo / aria=label / text=Click)" />
+
+    <!-- Dynamic param rows (shown/hidden per action) -->
+    <div class="row" id="row-selector">
+      <input id="inp-selector" type="text"
+        placeholder="selector: testid=foo  aria=label  text=Click  #css" />
     </div>
-    <div class="row" id="value-row" style="display:none">
-      <input id="value-input" type="text" placeholder="text / url / code" />
+    <div class="row" id="row-value" style="display:none">
+      <input id="inp-value" type="text" placeholder="value / url / text / code / key" />
     </div>
+    <div class="row" id="row-attr" style="display:none">
+      <input id="inp-attr" type="text" placeholder="attribute name (href, class, src…)" />
+    </div>
+
     <div class="row">
       <button id="run-btn">▶ Виконати</button>
-      <button id="ws-btn">⚡ Підключити портал</button>
+      <button id="ws-btn" class="secondary">⚡ Портал</button>
     </div>
+
     <div id="result-box" class="result-box"></div>
   </section>
 
-  <section class="card">
+  <!-- ── Log panel ── -->
+  <section class="panel" id="tab-log">
     <div class="log-header">
-      <h2>Action Log</h2>
-      <button id="clear-log-btn" class="small-btn">очистити</button>
+      <span id="log-count" class="muted">0 записів</span>
+      <button id="clear-log-btn" class="small-btn danger">очистити</button>
     </div>
     <div id="log-box" class="log-box"></div>
+  </section>
+
+  <!-- ── Config panel ── -->
+  <section class="panel" id="tab-cfg">
+    <label class="field-label">WebSocket URL</label>
+    <div class="row">
+      <input id="cfg-ws-url" type="text" placeholder="ws://localhost:8765" />
+    </div>
+    <label class="field-label">Cmd timeout (ms)</label>
+    <div class="row">
+      <input id="cfg-cmd-timeout" type="number" value="30000" min="1000" max="120000" />
+    </div>
+    <div class="row">
+      <button id="cfg-save-btn">💾 Зберегти</button>
+      <button id="cfg-reset-btn" class="secondary">↩ Скинути</button>
+    </div>
+    <div id="cfg-result" class="muted" style="font-size:11px;margin-top:6px"></div>
   </section>
 
   <script src="popup.js"></script>
