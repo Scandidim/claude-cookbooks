@@ -1,3 +1,7 @@
+# Portal runtime files
+portal/storage/portal.db
+portal/.env
+
 # Byte-compiled / optimized / DLL files
 tmp/
 __pycache__/
